@@ -89,3 +89,7 @@ MIT License – feel free to use and modify.
 
 
 ---
+
+# Weekly Chores Scheduler
+
+Built with ❤️ by Cyberflex
