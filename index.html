@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Chores Scheduler</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  table { border-collapse: collapse; width: 100%; max-width: 600px; margin-top: 20px; }
+  th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+  th { background-color: #f0f0f0; }
+  input { padding: 5px; margin: 5px 0; width: 200px; }
+  button { padding: 6px 12px; margin-top: 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h2>Weekly Chores Scheduler</h2>
+
+<label>Brother 1 Name: <input type="text" id="user1" value="Brother 1"></label><br>
+<label>Brother 2 Name: <input type="text" id="user2" value="Brother 2"></label><br>
+<label>Chores (comma separated): <input type="text" id="chores" value="Washing toilet,Washing clothes,Sweeping the room"></label><br>
+<button onclick="createSchedule()">Generate Schedule</button>
+
+<table id="scheduleTable">
+  <tr>
+    <th>Date</th>
+    <th>Brother 1</th>
+    <th>Brother 2</th>
+  </tr>
+</table>
+
+<script>
+function generateSchedule(users, chores, days) {
+    const schedule = [];
+    let choreIndex = 0;
+
+    for (let i = 0; i < days; i++) {
+        const dayAssignment = {};
+        dayAssignment[users[0]] = chores[choreIndex % chores.length];
+        dayAssignment[users[1]] = chores[(choreIndex + 1) % chores.length];
+
+        schedule.push(dayAssignment);
+        choreIndex++;
+    }
+    return schedule;
+}
+
+function createSchedule() {
+    const user1 = document.getElementById("user1").value || "Brother 1";
+    const user2 = document.getElementById("user2").value || "Brother 2";
+    const choresInput = document.getElementById("chores").value;
+    const chores = choresInput.split(",").map(c => c.trim()).filter(c => c);
+
+    const users = [user1, user2];
+    const days = 7;
+
+    const schedule = generateSchedule(users, chores, days);
+    localStorage.setItem("weeklySchedule", JSON.stringify(schedule));
+
+    displaySchedule(schedule, users);
+}
+
+function displaySchedule(schedule, users) {
+    const table = document.getElementById("scheduleTable");
+    // Remove previous rows except the header
+    table.innerHTML = `<tr>
+        <th>Date</th>
+        <th>${users[0]}</th>
+        <th>${users[1]}</th>
+    </tr>`;
+
+    const today = new Date();
+
+    schedule.forEach((day, index) => {
+        const row = table.insertRow();
+        const date = new Date(today);
+        date.setDate(today.getDate() + index);
+        const formattedDate = date.toLocaleDateString();
+        row.insertCell(0).innerText = formattedDate;
+        row.insertCell(1).innerText = day[users[0]];
+        row.insertCell(2).innerText = day[users[1]];
+    });
+}
+
+// Load saved schedule on page load
+window.onload = () => {
+    const saved = localStorage.getItem("weeklySchedule");
+    if (saved) {
+        const user1 = document.getElementById("user1").value;
+        const user2 = document.getElementById("user2").value;
+        displaySchedule(JSON.parse(saved), [user1, user2]);
+    }
+}
+</script>
+
+</body>
+</html>
