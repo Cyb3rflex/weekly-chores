@@ -1,147 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weekly Chores Scheduler</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(to bottom, #f0f4f8, #e0eaf3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 30px 10px;
-    color: #2c3e50;
-  }
-  h2 { margin-bottom: 20px; font-size: 28px; color: #34495e; }
-  .card {
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    padding: 25px;
-    max-width: 700px;
-    width: 100%;
-  }
-  .inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-  .inputs label { font-weight: 500; font-size: 14px; }
-  .inputs input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; width: 100%; }
-  button {
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    background-color: #3498db;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s;
-    margin-top: 10px;
-  }
-  button:hover { background-color: #2980b9; }
-  table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; margin-top: 20px; }
-  th, td { padding: 12px; text-align: center; }
-  th { background-color: #3498db; color: white; font-weight: 600; }
-  tr:nth-child(even) { background-color: #f2f6fa; }
-  tr:hover { background-color: #d0e7ff; transition: 0.3s; }
-  .chore-icon { margin-right: 6px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Chores Scheduler</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
 
-  @media (max-width: 500px) {
-    th, td { padding: 8px; font-size: 14px; }
-    h2 { font-size: 22px; }
-    .inputs input { padding: 8px; font-size: 14px; }
-    button { padding: 10px; font-size: 14px; }
-  }
-</style>
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 900px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      margin: 5px;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .table-container {
+      overflow-x: auto; /* ✅ enables horizontal scroll */
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px; /* ✅ prevents squishing */
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #3b82f6;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background: #1e293b;
+    }
+
+    tr:nth-child(odd) {
+      background: #0f172a;
+    }
+
+    /* ✅ Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #scheduleTable, #scheduleTable * {
+        visibility: visible;
+      }
+      #scheduleTable {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<h2>Weekly Chores Scheduler</h2>
-
-<div class="card">
-  <div class="inputs">
+  <div class="card">
+    <h1>Weekly Chores Scheduler</h1>
     <label>Siblings (comma separated):</label>
     <input type="text" id="users" value="Brother 1,Brother 2">
-    <label>Chores (comma separated):</label>
-    <input type="text" id="chores" value="Washing toilet,Washing clothes,Sweeping the room">
+
+    <label>Chores (comma separated, you can add emoji e.g. 🍽 Washing dishes):</label>
+    <input type="text" id="chores" value="🚽 Washing toilet,👕 Washing clothes,🧹 Sweeping">
+
+    <button onclick="generateSchedule()">Generate Schedule</button>
+    <button id="printBtn">Print / Save as PDF</button>
+
+    <div class="table-container">
+      <table id="scheduleTable"></table>
+    </div>
   </div>
-  <button onclick="createSchedule()">Generate Schedule</button>
-  <button onclick="printSchedule()">Print / Save as PDF</button>
 
-  <table id="scheduleTable">
-    <tr>
-      <th>Date</th>
-      <!-- User headers will be inserted dynamically -->
-    </tr>
-  </table>
-</div>
+  <script>
+    // Default icons if user doesn’t provide emoji
+    const defaultChoreIcons = {
+      "Washing toilet": "🚽",
+      "Washing clothes": "👕",
+      "Sweeping": "🧹"
+    };
 
-<script>
-const choreIcons = {
-    "Washing toilet": "<i class='fas fa-toilet-paper chore-icon'></i>",
-    "Washing clothes": "<i class='fas fa-tshirt chore-icon'></i>",
-    "Sweeping the room": "<i class='fas fa-broom chore-icon'></i>"
-};
-
-function generateSchedule(users, chores, days) {
-    const schedule = [];
-    let choreIndex = 0;
-    for (let i = 0; i < days; i++) {
-        const dayAssignment = {};
-        users.forEach((user, idx) => {
-            dayAssignment[user] = chores[(choreIndex + idx) % chores.length];
-        });
-        schedule.push(dayAssignment);
-        choreIndex++;
+    function extractIcon(chore) {
+      // Check if first char is an emoji (non-alphanumeric)
+      const firstChar = chore.charAt(0);
+      if (/\p{Emoji}/u.test(firstChar)) {
+        return { icon: firstChar, text: chore.slice(1).trim() };
+      }
+      // Use default icons if known
+      for (let key in defaultChoreIcons) {
+        if (chore.toLowerCase().includes(key.toLowerCase())) {
+          return { icon: defaultChoreIcons[key], text: chore };
+        }
+      }
+      // Fallback
+      return { icon: "✅", text: chore };
     }
-    return schedule;
-}
 
-function createSchedule() {
-    const usersInput = document.getElementById("users").value;
-    const users = usersInput.split(",").map(u => u.trim()).filter(u => u);
-    const choresInput = document.getElementById("chores").value;
-    const chores = choresInput.split(",").map(c => c.trim()).filter(c => c);
-    const days = 7;
-    const schedule = generateSchedule(users, chores, days);
-    localStorage.setItem("weeklySchedule", JSON.stringify(schedule));
-    displaySchedule(schedule, users);
-}
+    function generateSchedule() {
+      const users = document.getElementById("users").value.split(",").map(u => u.trim()).filter(Boolean);
+      const chores = document.getElementById("chores").value.split(",").map(c => c.trim()).filter(Boolean);
+      const days = 7; // one week
 
-function displaySchedule(schedule, users) {
-    const table = document.getElementById("scheduleTable");
-    table.innerHTML = `<tr>
-        <th>Date</th>
-        ${users.map(u => `<th>${u}</th>`).join('')}
-    </tr>`;
-    const today = new Date();
-    schedule.forEach((day, index) => {
-        const row = table.insertRow();
-        const date = new Date(today);
-        date.setDate(today.getDate() + index);
-        const formattedDate = date.toLocaleDateString();
-        row.insertCell(0).innerText = formattedDate;
-        users.forEach(user => {
-            const cell = row.insertCell();
-            cell.innerHTML = (choreIcons[day[user]] || "") + day[user];
+      let table = document.getElementById("scheduleTable");
+      table.innerHTML = "";
+
+      // Header row
+      let headerRow = "<tr><th>Date</th>";
+      users.forEach(user => {
+        headerRow += `<th>${user}</th>`;
+      });
+      headerRow += "</tr>";
+      table.innerHTML += headerRow;
+
+      let choreIndex = 0;
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toLocaleDateString();
+
+        let row = `<tr><td>${dateStr}</td>`;
+        users.forEach((user, idx) => {
+          const rawChore = chores[(choreIndex + idx) % chores.length];
+          const { icon, text } = extractIcon(rawChore);
+          row += `<td>${icon} ${text}</td>`;
         });
+        row += "</tr>";
+
+        table.innerHTML += row;
+        choreIndex++;
+      }
+    }
+
+    // ✅ Print button
+    document.getElementById("printBtn").addEventListener("click", () => {
+      window.print();
     });
-}
-
-function printSchedule() {
-    window.print();
-}
-
-// Load saved schedule on page load
-window.onload = () => {
-    const saved = localStorage.getItem("weeklySchedule");
-    const usersInput = document.getElementById("users").value;
-    const users = usersInput.split(",").map(u => u.trim()).filter(u => u);
-    if (saved) displaySchedule(JSON.parse(saved), users);
-}
-</script>
-
+  </script>
 </body>
 </html>
