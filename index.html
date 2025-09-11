@@ -45,7 +45,7 @@
     table {
       border-collapse: collapse;
       width: 100%;
-      max-width: 900px;
+      max-width: 1000px;
       background: white;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       border-radius: 10px;
@@ -56,6 +56,7 @@
       padding: 10px;
       text-align: center;
       font-size: 14px;
+      word-wrap: break-word;
     }
     th {
       background: #4CAF50;
@@ -68,6 +69,11 @@
       table, th, td {
         font-size: 12px;
         padding: 6px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
       }
     }
   </style>
