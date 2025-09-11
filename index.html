@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weekly Chores Scheduler</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -55,14 +56,16 @@
     }
 
     .table-container {
-      overflow-x: auto; /* ✅ enables horizontal scroll */
+      overflow-x: auto;
       margin-top: 20px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 600px; /* ✅ prevents squishing */
+      min-width: 600px;
+      background: white;
+      color: black;
     }
 
     th, td {
@@ -77,27 +80,11 @@
     }
 
     tr:nth-child(even) {
-      background: #1e293b;
+      background: #f1f5f9;
     }
 
     tr:nth-child(odd) {
-      background: #0f172a;
-    }
-
-    /* ✅ Print styles */
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      #scheduleTable, #scheduleTable * {
-        visibility: visible;
-      }
-      #scheduleTable {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
+      background: #e2e8f0;
     }
   </style>
 </head>
@@ -111,7 +98,7 @@
     <input type="text" id="chores" value="🚽 Washing toilet,👕 Washing clothes,🧹 Sweeping">
 
     <button onclick="generateSchedule()">Generate Schedule</button>
-    <button id="printBtn">Print / Save as PDF</button>
+    <button id="downloadBtn">Download as PDF</button>
 
     <div class="table-container">
       <table id="scheduleTable"></table>
@@ -119,7 +106,6 @@
   </div>
 
   <script>
-    // Default icons if user doesn’t provide emoji
     const defaultChoreIcons = {
       "Washing toilet": "🚽",
       "Washing clothes": "👕",
@@ -127,30 +113,26 @@
     };
 
     function extractIcon(chore) {
-      // Check if first char is an emoji (non-alphanumeric)
       const firstChar = chore.charAt(0);
       if (/\p{Emoji}/u.test(firstChar)) {
         return { icon: firstChar, text: chore.slice(1).trim() };
       }
-      // Use default icons if known
       for (let key in defaultChoreIcons) {
         if (chore.toLowerCase().includes(key.toLowerCase())) {
           return { icon: defaultChoreIcons[key], text: chore };
         }
       }
-      // Fallback
       return { icon: "✅", text: chore };
     }
 
     function generateSchedule() {
       const users = document.getElementById("users").value.split(",").map(u => u.trim()).filter(Boolean);
       const chores = document.getElementById("chores").value.split(",").map(c => c.trim()).filter(Boolean);
-      const days = 7; // one week
+      const days = 7;
 
       let table = document.getElementById("scheduleTable");
       table.innerHTML = "";
 
-      // Header row
       let headerRow = "<tr><th>Date</th>";
       users.forEach(user => {
         headerRow += `<th>${user}</th>`;
@@ -177,10 +159,19 @@
       }
     }
 
-    // ✅ Print button
-    document.getElementById("printBtn").addEventListener("click", () => {
-      window.print();
+    // ✅ Download as PDF
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "landscape" });
+      const table = document.getElementById("scheduleTable");
+
+      doc.text("Weekly Chores Schedule", 14, 15);
+      doc.autoTable({ html: table, startY: 20 });
+      doc.save("weekly-chores.pdf");
     });
   </script>
+
+  <!-- ✅ jsPDF autotable plugin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
