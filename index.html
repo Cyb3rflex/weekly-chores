@@ -1,144 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Weekly Chores Scheduler — PDF fix</title>
-
-  <!-- jsPDF (UMD) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- jsPDF-AutoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Chores Scheduler</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; background:#0f172a; color:white; margin:0; padding:20px; }
-    .card { background:#1e293b; padding:20px; border-radius:10px; max-width:980px; margin:0 auto; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
-    h1 { text-align:center; margin:0 0 18px; }
-    label{display:block;margin:10px 0 6px}
-    input{width:100%;padding:10px;border-radius:6px;border:0;margin-bottom:12px}
-    button{padding:10px 14px;border-radius:6px;border:0;background:#3b82f6;color:#fff;margin:6px 6px 6px 0;cursor:pointer}
-    .table-container{overflow-x:auto;margin-top:18px}
-    table{width:100%;border-collapse:collapse;min-width:640px;background:white;color:black}
-    th,td{border:1px solid #d1d5db;padding:10px;text-align:center}
-    th{background:#3b82f6;color:white}
-    tr:nth-child(even){background:#f8fafc}
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    input {
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background: #4CAF50;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    @media(max-width: 600px) {
+      table, th, td {
+        font-size: 12px;
+        padding: 6px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Weekly Chores Scheduler</h1>
+  <h1>Weekly Chores Scheduler</h1>
 
-    <label>Siblings (comma separated)</label>
-    <input id="users" value="Brother 1,Brother 2" />
-
-    <label>Chores (comma separated — you can include emoji like 🍽 Washing dishes)</label>
-    <input id="chores" value="🚽 Washing toilet,👕 Washing clothes,🧹 Sweeping" />
-
-    <div>
-      <button onclick="generateSchedule()">Generate Schedule</button>
-      <button id="downloadBtn">Download as PDF</button>
-    </div>
-
-    <div class="table-container">
-      <table id="scheduleTable"></table>
-    </div>
+  <div class="controls">
+    <input type="text" id="memberInput" placeholder="Enter sibling name" />
+    <button onclick="addMember()">Add Member</button>
+    <button id="downloadBtn">Download as PDF</button>
   </div>
 
-<script>
-/* --- Utility: remove emojis for PDF text (tries Unicode property, falls back to surrogate-pair removal) --- */
-function stripEmojis(text){
-  if(!text || typeof text !== 'string') return '';
-  try {
-    // Modern browsers support Unicode property escapes for emojis
-    return text.replace(/[\p{Emoji_Presentation}\p{Emoji}\u200D\uFE0F]+/gu, '').trim();
-  } catch(e){
-    // Fallback: remove surrogate pair emojis and some common ranges
-    return text
-      .replace(/([\uD800-\uDBFF][\uDC00-\uDFFF])/g, '')   // surrogate pairs
-      .replace(/[\u2600-\u26FF]/g,'')                     // miscellaneous symbols
-      .replace(/[\u2700-\u27BF]/g,'')                     // dingbats
-      .trim();
-  }
-}
+  <table id="scheduleTable"></table>
 
-/* --- Build table on page (keeps emojis) --- */
-function generateSchedule(){
-  const users = document.getElementById('users').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const chores = document.getElementById('chores').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const days = 7;
-  const table = document.getElementById('scheduleTable');
-  table.innerHTML = '';
+  <!-- jsPDF and autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  
+  <script>
+    let members = ["Brother A", "Brother B"];
 
-  // Header
-  let header = '<tr><th>Date</th>' + users.map(u => `<th>${u}</th>`).join('') + '</tr>';
-  table.insertAdjacentHTML('beforeend', header);
+    function generateSchedule(members) {
+      const table = document.getElementById("scheduleTable");
+      table.innerHTML = "";
 
-  let idx = 0;
-  for(let d=0; d<days; d++){
-    const date = new Date();
-    date.setDate(date.getDate()+d);
-    const dateStr = date.toLocaleDateString();
-    let row = `<tr><td>${dateStr}</td>`;
-    users.forEach((u,i)=>{
-      const raw = chores[(idx + i) % chores.length] || '';
-      row += `<td>${raw}</td>`;
-    });
-    row += '</tr>';
-    table.insertAdjacentHTML('beforeend', row);
-    idx++;
-  }
-}
+      const headerRow = document.createElement("tr");
+      const th1 = document.createElement("th");
+      th1.textContent = "Day";
+      headerRow.appendChild(th1);
 
-/* --- Robust PDF export: reads table, strips emoji, uses autoTable with head/body --- */
-document.getElementById('downloadBtn').addEventListener('click', async () => {
-  // Make sure table exists and has rows
-  const table = document.getElementById('scheduleTable');
-  if(!table || !table.querySelector('tr')) {
-    alert('Generate the schedule first (click "Generate Schedule").');
-    return;
-  }
+      members.forEach(member => {
+        const th = document.createElement("th");
+        th.textContent = member;
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
 
-  // Access jsPDF
-  const jspdfGlobal = window.jspdf || window.jsPDF;
-  if(!jspdfGlobal){
-    alert('jsPDF not loaded. Check your internet connection or scripts.');
-    return;
-  }
-  const { jsPDF } = window.jspdf || window;
-  if(!jsPDF){
-    alert('jsPDF not available.');
-    return;
-  }
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const chores = ["🚽 Washing Toilet", "👕 Washing Clothes", "🧹 Sweeping Room"];
 
-  // Collect headers and rows (text-only, emojis removed)
-  const headers = Array.from(table.querySelectorAll('th')).map(th => stripEmojis(th.innerText || th.textContent || ''));
-  const rows = Array.from(table.querySelectorAll('tr')).slice(1).map(tr =>
-    Array.from(tr.querySelectorAll('td')).map(td => stripEmojis(td.innerText || td.textContent || ''))
-  );
+      days.forEach((day, i) => {
+        const row = document.createElement("tr");
+        const tdDay = document.createElement("td");
+        tdDay.textContent = day;
+        row.appendChild(tdDay);
 
-  // Create PDF
-  try {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    doc.setFontSize(14);
-    doc.text('Weekly Chores Schedule', 40, 40);
+        members.forEach((_, j) => {
+          const td = document.createElement("td");
+          td.textContent = chores[(i + j) % chores.length];
+          row.appendChild(td);
+        });
 
-    // autotable - head & body
-    doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 60,
-      styles: { fontSize: 10, cellPadding: 6 },
-      headStyles: { fillColor: [55, 120, 250], textColor: 255 },
-      theme: 'grid',
-      margin: { left: 20, right: 20 }
+        table.appendChild(row);
+      });
+    }
+
+    function addMember() {
+      const input = document.getElementById("memberInput");
+      if (input.value.trim() !== "") {
+        members.push(input.value.trim());
+        input.value = "";
+        generateSchedule(members);
+      }
+    }
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "landscape" });
+      const table = document.getElementById("scheduleTable").cloneNode(true);
+
+      // Strip emojis for PDF export
+      table.querySelectorAll("td, th").forEach(el => {
+        el.innerText = el.innerText.replace(/[\p{Emoji}\u200d]+/gu, "").trim();
+      });
+
+      doc.text("Weekly Chores Schedule", 14, 15);
+      doc.autoTable({ html: table, startY: 20 });
+      doc.save("weekly-chores.pdf");
     });
 
-    doc.save('weekly-chores.pdf');
-  } catch(err){
-    console.error(err);
-    alert('Export failed — check console (F12) for details.');
-  }
-});
-</script>
+    // Initial load
+    generateSchedule(members);
+  </script>
 </body>
 </html>
