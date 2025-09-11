@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weekly Chores Scheduler</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -159,19 +160,21 @@
       }
     }
 
-    // ✅ Download as PDF
+    // ✅ Download PDF without emojis
     document.getElementById("downloadBtn").addEventListener("click", () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape" });
-      const table = document.getElementById("scheduleTable");
+      const table = document.getElementById("scheduleTable").cloneNode(true);
+
+      // Strip emojis from PDF export
+      table.querySelectorAll("td, th").forEach(cell => {
+        cell.innerText = cell.innerText.replace(/[\p{Emoji}\u200d]+/gu, "").trim();
+      });
 
       doc.text("Weekly Chores Schedule", 14, 15);
       doc.autoTable({ html: table, startY: 20 });
       doc.save("weekly-chores.pdf");
     });
   </script>
-
-  <!-- ✅ jsPDF autotable plugin -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
